@@ -223,6 +223,11 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	enum net_verdict verdict;
 	int status = -EIO;
 
+	/* Lock the kernel scheduler until finishing this send data. see:
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/8131
+	 */
+	k_sched_lock();
+
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
@@ -292,6 +297,8 @@ done:
 	if (verdict == NET_DROP && dst->addr) {
 		net_if_call_link_cb(iface, dst, status);
 	}
+
+	k_sched_unlock();
 
 	return verdict;
 }
