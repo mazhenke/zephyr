@@ -130,6 +130,11 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		return false;
 	}
 
+    NET_ASSERT(pkt->ref != 0);
+    if (0 == pkt->ref) {
+        while (1);
+    }
+
 	debug_check_packet(pkt);
 
 	dst = net_pkt_ll_dst(pkt);
@@ -226,7 +231,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	/* Lock the kernel scheduler until finishing this send data. see:
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/8131
 	 */
-	k_sched_lock();
+	//k_sched_lock();
 
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		/* Drop packet if interface is not up */
@@ -298,7 +303,7 @@ done:
 		net_if_call_link_cb(iface, dst, status);
 	}
 
-	k_sched_unlock();
+	//k_sched_unlock();
 
 	return verdict;
 }
